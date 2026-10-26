@@ -132,6 +132,7 @@ button:disabled { cursor: default; }
 .answer-label { position: absolute; top: 7px; right: 7px; padding: 3px 5px; background: #111; color: #fff; font-style: normal; font-size: 8px; }
 
 .behavior-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.behavior-grid.four-options .behavior-card:first-child { grid-column: auto; height: 180px; }
 .behavior-card { height: 180px; position: relative; padding: 8px; border: 1.5px solid #d7d4ca; background: white; border-radius: 3px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; cursor: pointer; transition: .18s; }
 .behavior-card:first-child { grid-column: 1 / -1; height: 187px; }
 .behavior-card.selected { border-color: #111; box-shadow: 5px 5px 0 var(--pink); transform: translate(-2px,-2px); }
@@ -145,6 +146,9 @@ button:disabled { cursor: default; }
 .behavior-card strong { font-size: 15px; }.behavior-card small { font-size: 10px; color: #777; margin-top: 2px; }
 .mini-radio { position: absolute; top: 8px; left: 8px; z-index: 3; width: 21px; height: 21px; display: grid; place-items: center; border-radius: 50%; background: #111; color: #fff; font: 700 9px Arial; }
 .behavior-card .answer-label { top: 8px; right: 8px; }
+.answer-feedback { margin-top: 11px; padding: 10px 12px; font-size: 11px; line-height: 1.45; animation: rise-in .25s both; }
+.feedback-correct { background: #e8f9ae; border-left: 3px solid #111; }
+.feedback-wrong { background: #ffe1ef; border-left: 3px solid #e84187; }
 
 .camp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .camp-card { height: 310px; position: relative; overflow: hidden; border: 1.5px solid #d7d4ca; background: white; border-radius: 3px; padding: 9px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; text-align: left; cursor: pointer; transition: .18s; }
@@ -178,6 +182,7 @@ button:disabled { cursor: default; }
 .mini-record-card > div:nth-child(2) { display: flex; flex-direction: column; gap: 3px; }.mini-record-card span { color: var(--lime); font: 8px Arial; letter-spacing: .12em; }.mini-record-card strong { font-size: 15px; }.mini-record-card small { color: #666; font-size: 9px; }.mini-record-card > em { position: absolute; top: 8px; right: 8px; font: 700 7px Arial; color: #111; background: var(--lime); padding: 4px; }
 .answer-tape { margin: 0 20px; border-top: 1px solid #333; }
 .answer-tape > div { min-height: 51px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #292929; }
+.ready-note { margin: -5px 20px 12px; color: #666; font-size: 8px; line-height: 1.4; }
 .answer-tape > div > span { color: #555; font: 700 10px Arial; }.answer-tape p { display: flex; flex: 1; justify-content: space-between; align-items: center; margin: 0; }.answer-tape b { font-size: 11px; }.answer-tape small { color: #626262; font-size: 8px; }
 .b-side-empty { margin: 15px 20px 19px; height: 105px; border: 1px dashed #404040; display: flex; align-items: center; gap: 15px; padding: 15px; position: relative; }
 .b-side-empty > span { position: absolute; top: 8px; right: 8px; font: 8px Arial; letter-spacing: .1em; color: #555; }.b-side-empty p { font-size: 11px; line-height: 1.45; color: #777; }.empty-disc { width: 65px; height: 65px; border: 1px solid #444; border-radius: 50%; display: grid; place-items: center; color: #555; font: 800 25px Arial; background: repeating-radial-gradient(#121212 0 3px,#202020 4px 5px); }
@@ -196,6 +201,14 @@ button:disabled { cursor: default; }
 .side-sheet { margin: 0 13px; color: #111; background: #f7f5ee; border-radius: 4px; overflow: hidden; position: relative; z-index: 1; padding-top: 49px; }
 .side-head { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; }.side-head > div { padding: 11px; display: flex; flex-direction: column; gap: 3px; }.side-head > div + div { border-left: 1px solid #ccc; }.side-head span { font: 700 8px Arial; letter-spacing: .14em; color: #777; }.side-head b { font-size: 15px; }
 .comparison-list { padding: 3px 11px; }.comparison { padding: 11px 0; border-bottom: 1px solid #d7d3c9; }.compare-label { display: flex; align-items: center; gap: 7px; font-size: 8px; color: #777; }.compare-label > span { font: 800 8px Arial; color: #111; }.compare-label em { margin-left: auto; font-style: normal; padding: 2px 5px; font-size: 7px; color: #111; }.compare-label .hit { background: var(--lime); }.compare-label .miss { background: #ff9fd9; }.compare-values { display: grid; grid-template-columns: 1fr 22px 1fr; align-items: center; margin-top: 7px; gap: 4px; }.compare-values b { font-size: 11px; line-height: 1.35; }.compare-values b:last-child { text-align: right; }.compare-values i { width: 21px; height: 21px; display: grid; place-items: center; border-radius: 50%; color: white; background: #111; font-style: normal; font-size: 11px; }
+.answer-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.answer-columns > div { min-width: 0; padding: 7px; background: #ebe9e1; display: flex; flex-direction: column; gap: 4px; }
+.answer-columns > div small, .pair-labels { color: #777; font-size: 7px; }
+.answer-columns > div b { font-size: 10px; line-height: 1.35; overflow-wrap: anywhere; }
+.answer-columns .true-answer { grid-column: 1 / -1; background: #e9f5be; }
+.self-test { display: block; margin-top: 6px; color: #888; font-size: 7px; }
+.pair-labels { display: grid; grid-template-columns: 1fr 1fr; margin-top: 5px; }.pair-labels span:last-child { text-align: right; }
+.result-data-note { margin: 5px 11px 0; color: #777; font-size: 7px; }
 .contrast-copy { margin: 11px; padding: 13px; color: #111; background: linear-gradient(110deg,#ffb3dd,#ffda59); }.contrast-copy.same { background: linear-gradient(110deg,#a0f3ed,#cbff59); }.contrast-copy span { font: 700 7px Arial; letter-spacing: .13em; }.contrast-copy p { margin: 7px 0 0; font-size: 13px; line-height: 1.5; }.contrast-copy strong { border-bottom: 2px solid #111; }
 .result-actions { padding: 17px 20px; }.result-actions > div { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 12px; }.result-actions > div button { height: 37px; color: #aaa; background: #151617; border: 1px solid #333; font-size: 9px; cursor: pointer; }
 .artist-egg { width: calc(100% - 40px); margin: 0 20px; padding: 12px; border: 1px solid #413757; color: white; background: linear-gradient(120deg,#1b1822,#2a1d43); display: flex; gap: 10px; align-items: center; text-align: left; cursor: pointer; }.artist-avatar.big { width: 44px; height: 44px; }.artist-egg > span:nth-child(2) { display: flex; flex-direction: column; flex: 1; gap: 5px; }.artist-egg small { color: #c89cff; font: 7px Arial; letter-spacing: .08em; }.artist-egg b { font-size: 11px; line-height: 1.35; }.artist-egg em { color: var(--lime); font-size: 22px; font-style: normal; }
