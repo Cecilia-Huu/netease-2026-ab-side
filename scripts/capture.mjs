@@ -19,6 +19,7 @@ const pages = [
   ['10-guest-result.png', 'guest-result'],
   ['11-artist-entry.png', 'artist-quiz'],
   ['12-artist-easter-egg.png', 'artist-reveal'],
+  ['13-guest-q1.png', 'guest-q1'],
 ]
 
 for (const [file, screen] of pages) {
