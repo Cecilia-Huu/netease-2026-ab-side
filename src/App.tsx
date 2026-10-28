@@ -93,11 +93,6 @@ function MiniRecord({ contribution, onClick, large = false }: { contribution: Co
     <span className="mini-caption"><b>{song.title}</b><small>{contribution.friendName}</small></span>
   </button>
 }
-function CollectionWall({ contributions, open }: { contributions:Contribution[]; open:(item:Contribution)=>void }) {
-  return <div className={'wall-frame ' + (contributions.length === 1 ? 'wall-single' : contributions.length <= 3 ? 'wall-few' : 'wall-many')}><div className="wall-inner"><div className="wall-masthead"><span>THE B SIDE ARCHIVE</span><b>朋友写下的另一面</b><small>{String(contributions.length).padStart(2,'0')} RECORDS</small></div>
-    <div className="wall-grid">{contributions.map(item=><MiniRecord key={item.id} contribution={item} onClick={()=>open(item)} />)}</div>
-  </div></div>
-}
 function BQuestionPicker({ slots, selected, choose, expanded, toggle }: {
   slots:ASelection[]; selected:BId; choose:(id:BId)=>void; expanded:boolean; toggle:()=>void
 }) {
@@ -124,6 +119,8 @@ function HostResult({ slots, contributions, side, flip, invite, guestView, open,
   setDemoCount:(count:number|null)=>void; reviewCount:number|null; actualCount:number; selectedB:BId; chooseB:(id:BId)=>void; expanded:boolean; toggleExpanded:()=>void
 }) {
   const empty=contributions.length===0
+  const spotlight=slots.find(item=>item.questionId==='A02')??slots[0]
+  const spotlightSong=songById(spotlight.songId)
   return <main className="screen album-result-screen scrollable">
     <Brand onHome={home}/>
     <div className="album-header"><span className="eyebrow">ONE RECORD · TWO SIDES</span>
@@ -135,17 +132,23 @@ function HostResult({ slots, contributions, side, flip, invite, guestView, open,
       <button className="album-stack" onClick={()=>flip(side==='A'?'B':'A')} aria-label="翻转查看唱片另一面">
         <span className="album-a-record"><span className="record-ring"></span><span className="album-a-label">A<small>我的2026</small></span>
           {slots.map((item,index)=>{const song=songById(item.songId);return song?<span className={'record-cover cover-position-'+index} key={item.questionId}><Cover song={song} small/></span>:null})}
+          {spotlightSong&&<span className="album-a-songline">{spotlight.questionId==='A02'?'我的年度最爱':'我的年度主打'}《{spotlightSong.title}》</span>}
         </span>
         <span className="album-b-record"><span className="record-ring"></span><span className="album-b-label">{empty?'?':'B'}<small>{empty?'等待朋友写下':'好友眼中的我'}</small></span>{empty&&<span className="b-visible-question" aria-hidden="true"><b>?</b><small>B面待补全</small></span>}</span>
       </button>
-      <span className="stage-hint">轻触唱片，也能翻面 ↗</span>
+      {side==='B'&&!empty&&<div className={'b-face-contributions count-'+Math.min(contributions.length,6)} aria-label="好友写在B面上的歌曲">
+        {contributions.map(item=>{const song=songById(item.songId);return song?<button key={item.id} className="b-face-entry" onClick={()=>open(item)} aria-label={'查看'+item.friendName+'为B面选择的'+song.title}>
+          <span className="b-face-mini-disc"><Cover song={song} small/></span><b>{song.title}</b><small>{item.friendName}</small>
+        </button>:null})}
+      </div>}
+      <span className="stage-hint">{side==='B'&&!empty?'轻触好友歌曲，打开详情 ↗':'轻触唱片，也能翻面 ↗'}</span>
     </div>
     <div className="album-tabs"><button className={side==='A'?'active':''} onClick={()=>flip('A')}>A SIDE <small>我亲自录制</small></button><button className={side==='B'?'active':''} onClick={()=>flip('B')}>B SIDE <small>朋友来写</small></button></div>
     {side==='A'?<><div className="album-cta"><Button onClick={()=>flip('B')}>翻转查看B面</Button></div><section className="album-tracklist"><div className="section-title"><span>THE FOUR TRACKS</span><b>我的四首年度注脚</b></div>
       {slots.map((item,index)=>{const song=songById(item.songId);return <div className="track-row" key={item.questionId}><span>{String(index+1).padStart(2,'0')}</span>{song&&<Cover song={song} small/>}<div><small>{aById(item.questionId).title}</small><b>{song?.title??'待选歌曲'}</b><em>{song?.artist??''}</em></div></div>})}
       <p>4首歌曲，组成我的年度主打。</p></section></>:
       <>{empty?<section className="unknown-note"><span>THE UNWRITTEN SIDE</span><h2>朋友眼中的你，<br/>还藏着哪些歌？</h2><p>挑一道题，交给朋友写下第一首隐藏曲目。</p></section>:
-        <section className="b-collection"><div className="section-title"><span>THE B SIDE ARCHIVE</span><b>{contributions.length} 位好友，为你收藏另一面</b></div><CollectionWall contributions={contributions} open={open}/><p className="wall-tip">轻触小黑胶，打开朋友留下的歌。</p></section>}
+        <section className="b-side-summary"><span>FRIENDS ON THE B SIDE</span><h2>{contributions.length} 位好友，写下了你的另一面</h2><p>每首歌都已收进B面唱片，轻触唱片上的小圆盘即可查看。</p></section>}
         <BQuestionPicker slots={slots} selected={selectedB} choose={chooseB} expanded={expanded} toggle={toggleExpanded}/>
         <div className="album-cta sticky-share"><Button onClick={invite}>{empty?'分享这道题给好友':'继续邀请好友，发现更多B面'}</Button><button className="text-link" onClick={guestView}>体验好友视角 ↗</button></div>
       </>}
@@ -334,7 +337,7 @@ export default function App() {
     {label:'06 B面切换题目',action:()=>{demo('host-result');setResultSide('B');setSelectedB('B04')}},
     {label:'07 B面 · 1位好友',action:()=>demo('host-result',1)},
     {label:'08 B面 · 3位好友',action:()=>demo('host-result',3)},
-    {label:'09 多好友收藏墙',action:()=>demo('host-result',6)},
+    {label:'09 多好友B面',action:()=>demo('host-result',6)},
     {label:'10 好友直接选歌',action:()=>demo('guest-song')},
     {label:'11 好友贡献结果',action:()=>demo('guest-result',1)},
     {label:'12 A/B反复翻面',action:()=>{demo('host-result',3);setResultSide('A')}},
