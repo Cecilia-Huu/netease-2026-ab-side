@@ -136,7 +136,7 @@ function HostResult({ slots, contributions, side, flip, invite, guestView, open,
         <span className="album-a-record"><span className="record-ring"></span><span className="album-a-label">A<small>我的2026</small></span>
           {slots.map((item,index)=>{const song=songById(item.songId);return song?<span className={'record-cover cover-position-'+index} key={item.questionId}><Cover song={song} small/></span>:null})}
         </span>
-        <span className="album-b-record"><span className="record-ring"></span><span className="album-b-label">{empty?'?':'B'}<small>{empty?'等待朋友写下':'好友眼中的我'}</small></span></span>
+        <span className="album-b-record"><span className="record-ring"></span><span className="album-b-label">{empty?'?':'B'}<small>{empty?'等待朋友写下':'好友眼中的我'}</small></span>{empty&&<span className="b-visible-question" aria-hidden="true"><b>?</b><small>B面待补全</small></span>}</span>
       </button>
       <span className="stage-hint">轻触唱片，也能翻面 ↗</span>
     </div>
