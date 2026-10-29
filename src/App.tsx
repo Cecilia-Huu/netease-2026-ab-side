@@ -113,10 +113,21 @@ function BQuestionPicker({ slots, selected, choose, expanded, toggle }: {
     <button className="more-questions" onClick={toggle}>{expanded?'收起题目 ↑':'查看更多题目 ↗'}</button>
   </section>
 }
-function HostResult({ slots, contributions, side, flip, invite, guestView, open, artist, home, setDemoCount, reviewCount, actualCount, selectedB, chooseB, expanded, toggleExpanded }: {
+function aCoverReason(item:ASelection, hasHistory:boolean) {
+  const suggested=recommendations(item.questionId,0,hasHistory).find(song=>song.id===item.songId)
+  return suggested?.note.replace(/^模拟记录 · /,'').replace(/，还没分享过$/, '') ?? '你亲自选进A面的歌'
+}
+function bCoverReason(item:Contribution) {
+  const question=bById(item.questionId)
+  const song=songById(item.songId)
+  const suggested=recommendations(item.questionId,0,false).find(candidate=>candidate.id===item.songId)
+  const witty=item.questionId==='B07' ? recommendations('B03',0,false).find(candidate=>candidate.id===item.songId) : suggested
+  return witty && witty.note!==song?.note ? witty.note : question.line
+}
+function HostResult({ slots, contributions, side, flip, invite, guestView, open, artist, home, setDemoCount, reviewCount, actualCount, selectedB, chooseB, expanded, toggleExpanded, hasHistory }: {
   slots:ASelection[]; contributions:Contribution[]; side:'A'|'B'; flip:(side:'A'|'B')=>void; invite:()=>void;
   guestView:()=>void; open:(item:Contribution)=>void; artist:()=>void; home:()=>void;
-  setDemoCount:(count:number|null)=>void; reviewCount:number|null; actualCount:number; selectedB:BId; chooseB:(id:BId)=>void; expanded:boolean; toggleExpanded:()=>void
+  setDemoCount:(count:number|null)=>void; reviewCount:number|null; actualCount:number; selectedB:BId; chooseB:(id:BId)=>void; expanded:boolean; toggleExpanded:()=>void; hasHistory:boolean
 }) {
   const empty=contributions.length===0
   const spotlight=slots.find(item=>item.questionId==='A02')??slots[0]
@@ -131,14 +142,14 @@ function HostResult({ slots, contributions, side, flip, invite, guestView, open,
       <div className="sleeve-paper"><span>2026 / 私人唱片</span><i>✶</i></div>
       <button className="album-stack" onClick={()=>flip(side==='A'?'B':'A')} aria-label="翻转查看唱片另一面">
         <span className="album-a-record"><span className="record-ring"></span><span className="album-a-label">A<small>我的2026</small></span>
-          {slots.map((item,index)=>{const song=songById(item.songId);return song?<span className={'record-cover cover-position-'+index} key={item.questionId}><Cover song={song} small/></span>:null})}
+          {slots.map((item,index)=>{const song=songById(item.songId);return song?<span className={'record-cover cover-position-'+index} key={item.questionId}><Cover song={song} small/><span className="record-caption" title={aCoverReason(item,hasHistory)}><b>#{aById(item.questionId).title}</b><strong>《{song.title}》</strong><small>{aCoverReason(item,hasHistory)}</small></span></span>:null})}
           {spotlightSong&&<span className="album-a-songline">{spotlight.questionId==='A02'?'我的年度最爱':'我的年度主打'}《{spotlightSong.title}》</span>}
         </span>
         <span className="album-b-record"><span className="record-ring"></span><span className="album-b-label">{empty?'?':'B'}<small>{empty?'等待朋友写下':'好友眼中的我'}</small></span>{empty&&<span className="b-visible-question" aria-hidden="true"><b>?</b><small>B面待补全</small></span>}</span>
       </button>
       {side==='B'&&!empty&&<div className={'b-face-contributions count-'+Math.min(contributions.length,6)} aria-label="好友写在B面上的歌曲">
-        {contributions.map(item=>{const song=songById(item.songId);return song?<button key={item.id} className="b-face-entry" onClick={()=>open(item)} aria-label={'查看'+item.friendName+'为B面选择的'+song.title}>
-          <span className="b-face-mini-disc"><Cover song={song} small/></span><b>{song.title}</b><small>{item.friendName}</small>
+        {contributions.map(item=>{const song=songById(item.songId),question=bById(item.questionId),reason=bCoverReason(item);return song?<button key={item.id} className="b-face-entry" onClick={()=>open(item)} aria-label={'查看'+item.friendName+'为'+question.title+'选择的'+song.title+'，'+reason} title={reason}>
+          <span className="b-face-mini-disc"><Cover song={song} small/></span><b>《{song.title}》</b><span className="b-face-note">{reason}</span><small className="b-face-owner">{item.friendName}</small>
         </button>:null})}
       </div>}
       <span className="stage-hint">{side==='B'&&!empty?'轻触好友歌曲，打开详情 ↗':'轻触唱片，也能翻面 ↗'}</span>
@@ -192,7 +203,7 @@ function GuestResult({ contribution, ownerName, slots, startOwn, viewOwner, invi
 }
 function DetailSheet({ item, close }: { item:Contribution; close:()=>void }) {
   const q=bById(item.questionId), song=songById(item.songId)!
-  return <div className="sheet-backdrop" role="presentation" onClick={close}><section className="detail-sheet" role="dialog" aria-label="好友唱片详情" onClick={event=>event.stopPropagation()}><button className="sheet-close" onClick={close}>×</button><span className="eyebrow">B SIDE · {q.id}</span><MiniRecord contribution={item} large/><div className="detail-text"><span>{q.badge}</span><h3>{song.title}</h3><p>{song.artist}</p><blockquote>{q.line}</blockquote><small>{item.friendName} · {new Date(item.submittedAt).toLocaleString('zh-CN')}</small>{item.demo && <em>评审演示样例</em>}</div></section></div>
+  return <div className="sheet-backdrop" role="presentation" onClick={close}><section className="detail-sheet" role="dialog" aria-label="好友唱片详情" onClick={event=>event.stopPropagation()}><button className="sheet-close" onClick={close}>×</button><span className="eyebrow">B SIDE · {q.id}</span><MiniRecord contribution={item} large/><div className="detail-text"><span>{q.badge}</span><h3>{song.title}</h3><p>{song.artist}</p><small>#{q.title} · {bCoverReason(item)}</small><blockquote>{q.line}</blockquote><small>{item.friendName} · {new Date(item.submittedAt).toLocaleString('zh-CN')}</small>{item.demo && <em>评审演示样例</em>}</div></section></div>
 }
 function ShareSheet({ url, questionId, share, copy, guest, close }: { url:string; questionId:BId; share:()=>void; copy:()=>void; guest:()=>void; close:()=>void }) {
   const question=bById(questionId)
@@ -344,7 +355,7 @@ export default function App() {
   ]
   const page=screen==='home'?<Home start={startOwn} artist={()=>openArtist('home')} onHome={home}/>:
     screen==='host-edit'?<HostEditor step={step} slot={sideA[step]} slots={sideA} draft={draft} batch={batch} select={setDraft} switchQuestion={switchQuestion} switchBatch={()=>setBatch(value=>value+1)} search={()=>openSearch('host')} back={()=>step===0?home():goStep(step-1)} confirm={confirmHost} home={home} hasHistory={hasHistory}/>:
-    screen==='host-result'?<HostResult slots={sideA} contributions={contributions} side={resultSide} flip={flipResult} invite={()=>setShareOpen(true)} guestView={()=>{setGuestSong(undefined);setScreen('guest-song')}} open={setDetail} artist={()=>openArtist('result')} home={home} setDemoCount={setDemoCount} reviewCount={reviewCount} actualCount={realContributions.length} selectedB={selectedB} chooseB={setSelectedB} expanded={expandedB} toggleExpanded={()=>setExpandedB(value=>!value)}/>:
+    screen==='host-result'?<HostResult slots={sideA} contributions={contributions} side={resultSide} flip={flipResult} invite={()=>setShareOpen(true)} guestView={()=>{setGuestSong(undefined);setScreen('guest-song')}} open={setDetail} artist={()=>openArtist('result')} home={home} setDemoCount={setDemoCount} reviewCount={reviewCount} actualCount={realContributions.length} selectedB={selectedB} chooseB={setSelectedB} expanded={expandedB} toggleExpanded={()=>setExpandedB(value=>!value)} hasHistory={hasHistory}/>:
     screen==='guest-song'?<GuestSong questionId={selectedB} slots={sideA} ownerName={guestOwnerName} batch={guestBatch} selected={guestSong} select={setGuestSong} switchBatch={()=>setGuestBatch(value=>value+1)} search={()=>openSearch('guest')} back={home} confirm={submitGuest} home={home} hasHistory={false} friendName={friendName} setFriendName={setFriendName}/>:
     screen==='guest-result'&&lastContribution?<GuestResult contribution={lastContribution} ownerName={guestOwnerName} slots={sideA} startOwn={startOwn} viewOwner={()=>{setResultSide('B');setScreen('host-result')}} invite={()=>setShareOpen(true)} detail={()=>setDetail(lastContribution)} home={home}/>:
     screen==='artist-quiz'||screen==='artist-reveal'?<ArtistFlow reveal={screen==='artist-reveal'} selected={artistSelected} setSelected={setArtistSelected} next={()=>setScreen('artist-reveal')} back={leaveArtist} home={home}/>:
