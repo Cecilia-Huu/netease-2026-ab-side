@@ -58,3 +58,4 @@
 .b-face-entry b{font-size:9px}.b-face-entry .b-face-note{width:100%;background:#fff9e6c9;border-radius:2px;padding:1px 2px;font-size:8px;line-height:9px;color:#4e454d;text-shadow:none}.b-face-entry .b-face-owner{font-size:7px;line-height:9px}
 .b-face-contributions.count-2,.b-face-contributions.count-3{grid-auto-rows:96px}
 @media(max-width:375px){.record-caption b,.record-caption strong{font-size:7px}.record-caption small{font-size:6px;line-height:7px}.b-face-entry b{font-size:7px}.b-face-entry .b-face-note,.b-face-entry .b-face-owner{font-size:6px;line-height:7px}.b-face-contributions.count-2,.b-face-contributions.count-3{grid-auto-rows:78px}}
+.question-screen:not(.guest-song-screen) .song-meta em{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}

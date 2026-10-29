@@ -1,4 +1,6 @@
-export type AId = 'A01'|'A02'|'A03'|'A04'|'A05'|'A06'|'A07'|'A08'|'A09'|'A10'
+import { mockReasonFor } from './mockListening'
+
+export type AId = 'A01'|'A02'|'A03'|'A04'|'A05'|'A07'
 export type BId = 'B01'|'B02'|'B03'|'B04'|'B05'|'B06'|'B07'
 export type ASelection = { questionId:AId; songId?:string }
 export type Contribution = { id:string; friendName:string; questionId:BId; songId:string; submittedAt:string; demo?:boolean }
@@ -7,16 +9,11 @@ export type AQuestion = { id:AId; title:string; prompt:string; isDefault:boolean
 export type BQuestion = { id:BId; title:string; prompt:string; isDefault:boolean; availability:'always'|'requires:A01'; badge:string; line:string; palette:string }
 
 export const aQuestions: AQuestion[] = [
-  {id:'A01',title:'年度电影片头曲',prompt:'如果2026年是一部电影，你会给自己选哪首片头曲？',isDefault:true,availability:'always'},
-  {id:'A02',title:'年度本命',prompt:'2026年，哪首歌一响，你就想说：这才是我的菜！',isDefault:false,availability:'always'},
+  {id:'A02',title:'年度本命',prompt:'2026年，哪首歌一响，你就想说：这才是我的菜！',isDefault:true,availability:'always'},
   {id:'A03',title:'年度私藏宝藏',prompt:'2026年，你最想公开安利哪首私藏宝藏歌？',isDefault:true,availability:'always'},
   {id:'A04',title:'最佳现场',prompt:'2026年最难忘的一次现场，哪首歌一响就能让你瞬间回去？',isDefault:false,availability:'always'},
   {id:'A05',title:'独家情绪出口',prompt:'2026年，哪首歌是你的专属情绪避风港？',isDefault:true,availability:'always'},
-  {id:'A06',title:'年度意外心动',prompt:'2026年，哪首歌原本不是你的菜，却越听越上头？',isDefault:true,availability:'always'},
-  {id:'A07',title:'年度精神状态',prompt:'如果只能用一首歌描述你2026年的精神状态，你会选哪首？',isDefault:false,availability:'always'},
-  {id:'A08',title:'年度高光BGM',prompt:'如果给你2026年最闪耀的瞬间配乐，你会选哪首？',isDefault:false,availability:'always'},
-  {id:'A09',title:'年度电影片尾曲',prompt:'如果2026年的电影即将散场，你想让哪首歌在片尾响起？',isDefault:false,availability:'always'},
-  {id:'A10',title:'年度风格偏爱',prompt:'2026年最喜欢的华语/K-pop/说唱/欧美歌曲是哪首？',isDefault:false,availability:'always'},
+  {id:'A07',title:'年度精神状态',prompt:'如果只能用一首歌描述你2026年的精神状态，你会选哪首？',isDefault:true,availability:'always'},
 ]
 export const bQuestions: BQuestion[] = [
   {id:'B01',title:'我眼里的TA',prompt:'如果用一首歌形容2026年的TA，你会选哪首？',isDefault:false,availability:'always',badge:'视角收藏家',line:'原来你眼中的TA，是这样的旋律。',palette:'mint'},
@@ -27,7 +24,7 @@ export const bQuestions: BQuestion[] = [
   {id:'B06',title:'主题曲投反对票',prompt:'TA给自己选好了2026主题曲，但你觉得真正适合TA的是哪首？',isDefault:true,availability:'requires:A01',badge:'年度导演',line:'你给TA的年度电影，换了一首片头曲。',palette:'orange'},
   {id:'B07',title:'歌品反差审判',prompt:'哪首歌看起来和TA八竿子打不着，你却觉得TA私下会偷偷循环？',isDefault:false,availability:'always',badge:'反差鉴定师',line:'这个反差，只有够熟的人才猜得到。',palette:'lime'},
 ]
-export const defaultAIds:AId[]=['A01','A03','A05','A06']
+export const defaultAIds:AId[]=['A02','A03','A05','A07']
 export const defaultBIds:BId[]=['B03','B04','B06','B02']
 // 本地模拟歌曲和推荐理由；封面由 CSS 绘制，不使用真实专辑素材。
 export const songs:Song[]=[
@@ -38,7 +35,7 @@ export const songs:Song[]=[
   {id:'s05',title:'Blueming',artist:'IU',palette:'blue',note:'换一种心情'},
   {id:'s06',title:'Dynamite',artist:'BTS',palette:'gold',note:'适合高光时刻'},
   {id:'s07',title:'晚婚',artist:'李宗盛',palette:'olive',note:'适合安静聆听'},
-  {id:'s08',title:'光年之外',artist:'邓紫棋',palette:'violet',note:'适合电影感'},
+  {id:'s08',title:'光年之外',artist:'G.E.M.邓紫棋',palette:'violet',note:'适合电影感'},
   {id:'s09',title:'至少还有你',artist:'林忆莲',palette:'rose',note:'情绪避风港'},
   {id:'s10',title:'刻在我心底的名字',artist:'卢广仲',palette:'teal',note:'适合回忆片段'},
   {id:'s11',title:'起风了',artist:'买辣椒也用券',palette:'sky',note:'适合重新出发'},
@@ -58,10 +55,16 @@ export const songs:Song[]=[
   {id:'s25',title:'平凡之路',artist:'朴树',palette:'sky',note:'一起走过的路'},
   {id:'s26',title:'最炫民族风',artist:'凤凰传奇',palette:'lime',note:'反差感十足'},
   {id:'s27',title:'学猫叫',artist:'小潘潘、小峰峰',palette:'peach',note:'耳机里的小秘密'},
+  {id:'s28',title:'霓虹甜心',artist:'马赛克乐队',palette:'indigo',note:'适合夜晚重听'},
+  {id:'s29',title:'好想爱这个世界啊',artist:'华晨宇',palette:'azure',note:'适合安静聆听'},
+  {id:'s30',title:'这世界那么多人',artist:'莫文蔚',palette:'rose',note:'熟悉的旋律'},
+  {id:'s31',title:'倔强',artist:'五月天',palette:'coral',note:'适合现场合唱'},
+  {id:'s32',title:'突然好想你',artist:'五月天',palette:'sky',note:'听到前奏就想跟唱'},
+  {id:'s33',title:'稻香',artist:'周杰伦',palette:'gold',note:'熟悉的夏天'},
 ]
 export const demoA:ASelection[]=[
-  {questionId:'A01',songId:'s25'},{questionId:'A03',songId:'s20'},
-  {questionId:'A05',songId:'s09'},{questionId:'A06',songId:'s21'},
+  {questionId:'A02',songId:'s19'},{questionId:'A03',songId:'s20'},
+  {questionId:'A05',songId:'s24'},{questionId:'A07',songId:'s22'},
 ]
 export const demoContributions:Contribution[]=[
   {id:'demo-1',friendName:'小许 · 演示',questionId:'B03',songId:'s24',submittedAt:'2026-10-28T12:00:00+08:00',demo:true},
@@ -81,18 +84,15 @@ export const defaultBFor=(sideA:ASelection[])=>{
   const preferred=preferredIds.map(id=>available.find(q=>q.id===id)).filter((q):q is BQuestion=>Boolean(q))
   return [...preferred,...available.filter(q=>!preferred.some(item=>item.id===q.id))]
 }
-// 歌曲元数据与模拟用户行为分开维护。以下次数/时间均为原型演示值。
-export const mockListeningProfiles = {
-  sample: { playCounts:{s19:128,s20:38,s21:43,s25:86}, recentLoops:{s21:23}, firstHeard:{s21:'8月'}, sharedSongIds:['s01','s09'] },
-  newUser: { playCounts:{}, recentLoops:{}, firstHeard:{}, sharedSongIds:[] },
-} as const
-
+// A面首批严格对应题目示例；换批只在同题候选池中轮换。
+const aRecommendationBatches:Record<string,string[][]> = {
+  A02:[['s19','s18','s08','s01'],['s24','s29','s31','s20']],
+  A03:[['s20','s28','s03','s17'],['s29','s30','s33','s01']],
+  A04:[['s31','s08','s32','s19'],['s18','s01','s20','s24']],
+  A05:[['s29','s24','s30','s33'],['s20','s28','s03','s17']],
+  A07:[['s22','s23','s21','s24'],['s26','s27','s25','s11']],
+}
 const firstBatch:Record<string,string[]> = {
-  A01:['s25','s23','s01','s11'], A02:['s19','s01','s05','s08'],
-  A03:['s20','s02','s04','s10'], A04:['s23','s08','s06','s17'],
-  A05:['s24','s09','s16','s07'], A06:['s21','s13','s12','s18'],
-  A07:['s22','s23','s21','s24'], A08:['s06','s08','s25','s11'],
-  A09:['s15','s24','s07','s16'], A10:['s01','s05','s13','s19'],
   B01:['s21','s25','s17','s26'], B02:['s17','s11','s22','s09'],
   B03:['s24','s26','s27','s21'], B04:['s10','s17','s15','s25'],
   B05:['s20','s05','s18','s02'], B06:['s22','s23','s21','s26'],
@@ -101,20 +101,22 @@ const firstBatch:Record<string,string[]> = {
 const wittyReasons:Record<string,Record<string,string>> = {
   A07:{s22:'🍀 2026主打一个玄学续命',s23:'🔥 每天上班都像在拯救世界',s21:'💗 精神状态稳定地突然发疯',s24:'💤 今年最大的愿望：让我睡会儿'},
   B03:{s24:'表面卷王，背地里只想躺平',s26:'高冷外壳，广场舞灵魂',s27:'外表成熟稳重，耳机里偷偷喵喵喵'},
-  A01:{s23:'今年的主角一出场，就准备拯救世界'},
-}
-const dataReasons:Record<string,Record<string,string>> = {
-  A02:{s19:`2026年循环了${mockListeningProfiles.sample.playCounts.s19}次，你的年度播放TOP 1`},
-  A03:{s20:`今年听了${mockListeningProfiles.sample.playCounts.s20}次，还没分享过`},
-  A06:{s21:`${mockListeningProfiles.sample.firstHeard.s21}第一次听，最近30天循环${mockListeningProfiles.sample.recentLoops.s21}次`},
-  A01:{s25:`这首歌陪你走过了今年的${mockListeningProfiles.sample.playCounts.s25}次播放`},
 }
 export const recommendations=(key:string,batch:number,hasHistory=true):Song[]=>{
+  const aBatches=aRecommendationBatches[key]
+  if (aBatches) {
+    const ids=aBatches[batch%aBatches.length]
+    return ids.map(id=>{
+      const song=songById(id)!
+      const note=key==='A07' ? (wittyReasons.A07[id]??song.note) :
+        hasHistory ? (mockReasonFor(key,id)??'运营主题歌单推荐') : '运营主题歌单推荐'
+      return {...song,note}
+    })
+  }
   const base=firstBatch[key]??firstBatch.B03
   const ids=batch===0?base:Array.from({length:4},(_,i)=>songs[(batch*5+i*4+key.charCodeAt(1))%songs.length].id)
   return ids.map(id=>{
     const song=songById(id)!
-    const note=wittyReasons[key]?.[id]??(hasHistory?dataReasons[key]?.[id]:undefined)??song.note
-    return {...song,note:hasHistory && dataReasons[key]?.[id]?'模拟记录 · '+note:note}
+    return {...song,note:wittyReasons[key]?.[id]??song.note}
   })
 }

@@ -14,7 +14,7 @@ const pages = [
   ['05-b-unknown-vinyl.png', 'screen=host-result&side=B'],
   ['06-b-four-topics.png', 'screen=host-result&side=B&focus=picker'],
   ['07-b-switched-topic.png', 'screen=host-result&side=B&b=B04&focus=picker'],
-  ['08-guest-song.png', 'view=guest&a=A01%3As25%2CA03%3As20%2CA05%3As09%2CA06%3As21&b=B03&name=%E9%98%BF%E4%BA%91'],
+  ['08-guest-song.png', 'view=guest&a=A02%3As19%2CA03%3As20%2CA05%3As24%2CA07%3As22&b=B03&name=%E9%98%BF%E4%BA%91'],
   ['09-guest-result.png', 'screen=guest-result'],
   ['10-one-friend.png', 'screen=host-result&demo=1&side=B&focus=wall'],
   ['11-three-friends.png', 'screen=host-result&demo=3&side=B&focus=wall'],

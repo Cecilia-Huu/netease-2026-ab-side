@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-浏览器打开 <http://127.0.0.1:5173/>。桌面端左侧提供评审导航；手机端按单页面流程体验。独立客态示例链接：<https://cecilia-huu.github.io/netease-2026-ab-side/?view=guest&a=A01%3As25%2CA03%3As20%2CA05%3As09%2CA06%3As21&b=B03&name=%E9%98%BF%E4%BA%91>。
+浏览器打开 <http://127.0.0.1:5173/>。桌面端左侧提供评审导航；手机端按单页面流程体验。独立客态示例链接：<https://cecilia-huu.github.io/netease-2026-ab-side/?view=guest&a=A02%3As19%2CA03%3As20%2CA05%3As24%2CA07%3As22&b=B03&name=%E9%98%BF%E4%BA%91>。A面播放记录与推荐理由均为2026-10-28演示快照的Mock数据。
 
 ```bash
 npm run build

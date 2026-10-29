@@ -45,12 +45,12 @@ function Vinyl({ palette = 'rainbow', side = 'A', small = false, onClick }: { pa
   return onClick ? <button className={'vinyl vinyl-' + palette + (small ? ' vinyl-small' : '')} onClick={onClick} aria-label="翻转唱片">{contents}</button> :
     <div className={'vinyl vinyl-' + palette + (small ? ' vinyl-small' : '')}>{contents}</div>
 }
-function SongChoices({ list, selected, onSelect }: { list: Song[]; selected?: string; onSelect: (id: string) => void }) {
+function SongChoices({ list, selected, onSelect, host = false }: { list: Song[]; selected?: string; onSelect: (id: string) => void; host?: boolean }) {
   const chosen = songById(selected)
   const display = chosen && !list.some(song => song.id === chosen.id) ? [chosen, ...list] : list
   return <div className="song-list">{display.map((song, i) =>
     <button className={'song-option ' + (selected === song.id ? 'selected' : '')} key={song.id} onClick={() => onSelect(song.id)}>
-      <Cover song={song} /><span className="song-meta"><strong>{song.title}</strong><small>{song.artist}</small><em>{chosen?.id === song.id && i === 0 && !list.some(item => item.id === song.id) ? '搜索选中' : song.note + ' · 模拟推荐'}</em></span>
+      <Cover song={song} /><span className="song-meta"><strong>{song.title}</strong><small>{song.artist}</small><em>{chosen?.id === song.id && i === 0 && !list.some(item => item.id === song.id) ? '自主选择 · 未读取个人播放记录' : host ? song.note : song.note + ' · 模拟推荐'}</em></span>
       <span className="song-radio">{selected === song.id ? '✓' : String.fromCharCode(65 + i)}</span>
     </button>)}</div>
 }
@@ -76,13 +76,11 @@ function HostEditor({ step, slot, slots, draft, batch, select, switchQuestion, s
   switchQuestion:()=>void; switchBatch:()=>void; search:()=>void; back:()=>void; confirm:()=>void; home:()=>void; hasHistory:boolean
 }) {
   const question = aById(slot.questionId)
-  const similar = slot.questionId === 'A09' && slots.some((item, index) => index !== step && item.questionId === 'A01')
   return <main className="screen question-screen"><Brand onHome={home} /><div className="progress-wrap"><span>A SIDE · {String(step+1).padStart(2,'0')}/04</span><div className="progress"><i style={{width:((step+1)*25)+'%'}}></i></div><b>{question.id}</b></div>
-    <div className="question-body"><div className="question-heading"><span className="question-kicker">RECORD YOUR SIDE</span><p className="question-type">{question.title}</p><h2>{question.prompt}</h2><p>选一首歌，写下你愿意展示的2026。</p></div>
-      {similar && <div className="similar-note">片头曲和片尾曲有些相近，试着给它们不同的心情。</div>}
-      <SongChoices list={recommendations(question.id,batch,hasHistory)} selected={draft} onSelect={select} />
+    <div className="question-body"><div className="question-heading"><span className="question-kicker">RECORD YOUR SIDE</span><p className="question-type">{question.title}</p><h2>{question.prompt}</h2><p>{!hasHistory?'通用歌单推荐':question.id==='A07'?'运营创意歌单':'模拟听歌数据'} · 选一首歌，写下你的2026。</p></div>
+      <SongChoices list={recommendations(question.id,batch,hasHistory)} selected={draft} onSelect={select} host />
       <div className="question-tools"><button onClick={switchQuestion}>↻ 换一题</button><button onClick={switchBatch}>⟳ 换一批歌曲</button><button onClick={search}>⌕ 搜索歌曲</button></div>
-      <p className="data-note">{hasHistory?'行为记录与推荐理由均为模拟示例。':'无听歌记录示例：已切换通用主题歌曲池。'} 可换题、换歌或返回修改。</p>
+      <p className="data-note">{!hasHistory?'无听歌数据示例：运营主题歌单推荐，不含个人播放信息。':question.id==='A07'?'本题歌曲与趣味文案为运营创意示例。':'播放记录与推荐理由均为Mock演示数据，不代表真实用户记录。'} 可换题、换歌或返回修改。</p>
     </div><div className="sticky-actions"><button className="back-link" onClick={back}>← {step === 0 ? '返回首页' : '上一题'}</button><Button onClick={confirm} disabled={!draft}>{step === 3 ? '完成我的A面' : '确认，下一题'}</Button></div>
   </main>
 }
@@ -302,7 +300,6 @@ export default function App() {
     const next=Array.from({length:aQuestions.length},(_,index)=>aQuestions[(start+index+1)%aQuestions.length]).find(question=>!used.has(question.id))!
     setSideA(previous=>previous.map((item,index)=>index===step?{questionId:next.id}:item))
     setDraft(undefined);setBatch(0)
-    if ((next.id==='A09'&&used.has('A01'))||(next.id==='A01'&&used.has('A09'))) notify('片头和片尾主题相近，试着选不同心情')
   }
   const confirmHost=()=>{
     if (!draft) return
@@ -344,7 +341,7 @@ export default function App() {
   const menu=[
     {label:'01 活动首页',action:()=>demo('home')},
     {label:'02 A面 · 年度本命',action:()=>{demo('host-edit');setSideA([{questionId:'A02'},...defaultAIds.slice(1).map(questionId=>({questionId}))])}},
-    {label:'03 A面 · 精神状态',action:()=>{demo('host-edit');setSideA([{questionId:'A07'},...defaultAIds.slice(1).map(questionId=>({questionId}))])}},
+    {label:'03 A面 · 精神状态',action:()=>{demo('host-edit');setSideA([{questionId:'A07'},...defaultAIds.filter(id=>id!=='A07').slice(0,3).map(questionId=>({questionId}))])}},
     {label:'04 A面完成',action:()=>demo('host-result')},
     {label:'05 B面问号 · 选题',action:()=>{demo('host-result');setResultSide('B')}},
     {label:'06 B面切换题目',action:()=>{demo('host-result');setResultSide('B');setSelectedB('B04')}},
