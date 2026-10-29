@@ -114,7 +114,9 @@ function BQuestionPicker({ slots, selected, choose, expanded, toggle }: {
   </section>
 }
 function aCoverReason(item:ASelection, hasHistory:boolean) {
-  const suggested=recommendations(item.questionId,0,hasHistory).find(song=>song.id===item.songId)
+  const suggested=Array.from({length:songs.length+1},(_,batch)=>batch)
+    .map(batch=>recommendations(item.questionId,batch,hasHistory).find(song=>song.id===item.songId))
+    .find(Boolean)
   return suggested?.note.replace(/^模拟记录 · /,'').replace(/，还没分享过$/, '') ?? '你亲自选进A面的歌'
 }
 function bCoverReason(item:Contribution) {
@@ -142,7 +144,7 @@ function HostResult({ slots, contributions, side, flip, invite, guestView, open,
       <div className="sleeve-paper"><span>2026 / 私人唱片</span><i>✶</i></div>
       <button className="album-stack" onClick={()=>flip(side==='A'?'B':'A')} aria-label="翻转查看唱片另一面">
         <span className="album-a-record"><span className="record-ring"></span><span className="album-a-label">A<small>我的2026</small></span>
-          {slots.map((item,index)=>{const song=songById(item.songId);return song?<span className={'record-cover cover-position-'+index} key={item.questionId}><Cover song={song} small/><span className="record-caption" title={aCoverReason(item,hasHistory)}><b>#{aById(item.questionId).title}</b><strong>《{song.title}》</strong><small>{aCoverReason(item,hasHistory)}</small></span></span>:null})}
+          {slots.map((item,index)=>{const song=songById(item.songId),reason=aCoverReason(item,hasHistory);return song?<span className={'record-cover cover-position-'+index} key={item.questionId}><Cover song={song} small/><span className="record-caption" title={reason}><b>#{aById(item.questionId).title}</b><strong>《{song.title}》</strong><small>{reason}</small></span></span>:null})}
           {spotlightSong&&<span className="album-a-songline">{spotlight.questionId==='A02'?'我的年度最爱':'我的年度主打'}《{spotlightSong.title}》</span>}
         </span>
         <span className="album-b-record"><span className="record-ring"></span><span className="album-b-label">{empty?'?':'B'}<small>{empty?'等待朋友写下':'好友眼中的我'}</small></span>{empty&&<span className="b-visible-question" aria-hidden="true"><b>?</b><small>B面待补全</small></span>}</span>
