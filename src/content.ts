@@ -25,7 +25,7 @@ export const bQuestions: BQuestion[] = [
   {id:'B07',title:'歌品反差审判',prompt:'哪首歌看起来和TA八竿子打不着，你却觉得TA私下会偷偷循环？',isDefault:false,availability:'always',badge:'反差鉴定师',line:'这个反差，只有够熟的人才猜得到。',palette:'lime'},
 ]
 export const defaultAIds:AId[]=['A02','A03','A05','A07']
-export const defaultBIds:BId[]=['B03','B04','B06','B02']
+export const defaultBIds:BId[]=['B03','B04','B06','B01','B02']
 // 本地模拟歌曲和推荐理由；封面由 CSS 绘制，不使用真实专辑素材。
 export const songs:Song[]=[
   {id:'s01',title:'晴天',artist:'周杰伦',palette:'sunset',note:'适合片头响起'},

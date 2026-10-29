@@ -7,6 +7,7 @@ import {
 
 type Screen = 'home' | 'host-edit' | 'host-result' | 'guest-song' | 'guest-result' | 'artist-quiz' | 'artist-reveal'
 type SearchContext = 'host' | 'guest'
+const FEATURES = { artist: false } as const
 const query = new URLSearchParams(window.location.search)
 document.documentElement.classList.toggle('capture-mode', query.get('capture') === '1')
 const screenParam = query.get('screen')
@@ -17,7 +18,8 @@ const initialScreen: Screen =
   screenParam === 'guest-q1' || screenParam === 'guest-entry' || screenParam === 'guest-topic' ? 'guest-song' :
   screenParam === 'host-ready' ? 'host-result' :
   screenParam === 'guest-result' ? 'guest-result' :
-  (['home','host-edit','host-result','guest-song','artist-quiz','artist-reveal'].includes(screenParam ?? '') ? screenParam as Screen : 'home')
+  (['home','host-edit','host-result','guest-song','artist-quiz','artist-reveal'].includes(screenParam ?? '') ?
+    (!FEATURES.artist && screenParam?.startsWith('artist') ? 'home' : screenParam as Screen) : 'home')
 
 function parseShared(): ASelection[] {
   const value = query.get('a')
@@ -39,6 +41,11 @@ function Button({ children, onClick, disabled = false, light = false }: { childr
 }
 function Cover({ song, small = false }: { song: Song; small?: boolean }) {
   return <div className={'cover cover-' + song.palette + ' cover-art-' + (Number(song.id.slice(1))%4) + (small ? ' cover-small' : '')} aria-hidden="true"><i></i><span>♪</span><b></b></div>
+}
+function PlayButton({ song, playing, toggle, compact = false }: { song:Song; playing:boolean; toggle:(id:string)=>void; compact?:boolean }) {
+  return <button type="button" className={'play-control '+(playing?'is-playing ':'')+(compact?'is-compact':'')} onClick={event=>{event.stopPropagation();toggle(song.id)}} aria-label={(playing?'暂停Demo试听：':'播放Demo试听：')+song.title} aria-pressed={playing}>
+    <span aria-hidden="true">{playing?'Ⅱ':'▶'}</span>
+  </button>
 }
 function Vinyl({ palette = 'rainbow', side = 'A', small = false, onClick }: { palette?: string; side?: 'A' | 'B'; small?: boolean; onClick?: () => void }) {
   const contents = <><i className="vinyl-groove groove-a"></i><i className="vinyl-groove groove-b"></i><span className="vinyl-center"><b>{side}</b><em>2026</em></span></>
@@ -69,7 +76,7 @@ function Home({ start, artist, onHome }: { start: () => void; artist: () => void
     <span className="eyebrow">2026 · YOUR TWO SIDES</span><h1>我的2026<br/><em>A</em>B面</h1>
     <p>如果2026年是一张唱片，<br/>A面由我亲自录制，B面留给朋友来写。</p>
   </div><div className="home-art"><Vinyl /><span className="home-side-a">A SIDE<br/>我眼中的自己</span><span className="home-side-b">B SIDE<br/>好友眼中的我</span><i className="scribble">✦</i></div>
-  <div className="home-actions"><Button light onClick={start}>录制我的A面</Button><button className="artist-teaser" onClick={artist}><span>AL</span><b>艺人隐藏B面 · 模拟彩蛋</b><em>↗</em></button></div></main>
+  <div className="home-actions"><Button light onClick={start}>录制我的A面</Button>{FEATURES.artist&&<button className="artist-teaser" onClick={artist}><span>AL</span><b>艺人隐藏B面 · 模拟彩蛋</b><em>↗</em></button>}</div></main>
 }
 function HostEditor({ step, slot, slots, draft, batch, select, switchQuestion, switchBatch, search, back, confirm, home, hasHistory }: {
   step:number; slot:ASelection; slots:ASelection[]; draft?:string; batch:number; select:(id:string)=>void;
@@ -95,11 +102,13 @@ function BQuestionPicker({ slots, selected, choose, expanded, toggle }: {
   slots:ASelection[]; selected:BId; choose:(id:BId)=>void; expanded:boolean; toggle:()=>void
 }) {
   const all=defaultBFor(slots)
-  const shown=expanded?all:all.slice(0,4)
+  const firstFour=all.slice(0,4)
+  const selectedQuestion=all.find(question=>question.id===selected)
+  const shown=expanded?all:(selectedQuestion&&!firstFour.some(question=>question.id===selected)?[selectedQuestion,...firstFour.slice(0,3)]:firstFour)
   const icons:Record<BId,string>={B01:'✦',B02:'✉',B03:'◕',B04:'▣',B05:'♫',B06:'◀',B07:'◉'}
   const a01=songById(slots.find(item=>item.questionId==='A01')?.songId)
   return <section className="b-question-picker">
-    <div className="picker-heading"><span>CHOOSE A QUESTION · 选一句话交给朋友</span><p>分享前由你选择，好友打开后直接选歌。</p></div>
+    <div className="picker-heading"><span>CHOOSE A QUESTION</span><h2>选一道题，让好友补全你的B面</h2><p>已经帮你选好一道题，也可以换一道。</p></div>
     <div className="b-question-list">{shown.map((question,index)=>
       <button key={question.id} className={'b-question-card '+(selected===question.id?'chosen':'')} onClick={()=>choose(question.id)} aria-pressed={selected===question.id}>
         <span className="question-card-number">{String(index+1).padStart(2,'0')} / {question.id}</span>
@@ -124,15 +133,17 @@ function bCoverReason(item:Contribution) {
   const witty=item.questionId==='B07' ? recommendations('B03',0,false).find(candidate=>candidate.id===item.songId) : suggested
   return witty && witty.note!==song?.note ? witty.note : question.line
 }
-function HostResult({ slots, contributions, side, flip, invite, guestView, open, artist, home, setDemoCount, reviewCount, actualCount, selectedB, chooseB, expanded, toggleExpanded, hasHistory }: {
+function HostResult({ slots, contributions, side, flip, invite, guestView, open, artist, home, setDemoCount, reviewCount, actualCount, selectedB, chooseB, expanded, toggleExpanded, hasHistory, playingSongId, togglePlay, likedSongs, toggleLike, commentSong, shareSong }: {
   slots:ASelection[]; contributions:Contribution[]; side:'A'|'B'; flip:(side:'A'|'B')=>void; invite:()=>void;
   guestView:()=>void; open:(item:Contribution)=>void; artist:()=>void; home:()=>void;
-  setDemoCount:(count:number|null)=>void; reviewCount:number|null; actualCount:number; selectedB:BId; chooseB:(id:BId)=>void; expanded:boolean; toggleExpanded:()=>void; hasHistory:boolean
+  setDemoCount:(count:number|null)=>void; reviewCount:number|null; actualCount:number; selectedB:BId; chooseB:(id:BId)=>void; expanded:boolean; toggleExpanded:()=>void; hasHistory:boolean;
+  playingSongId?:string; togglePlay:(id:string)=>void; likedSongs:Set<string>; toggleLike:(id:string)=>void; commentSong:(song:Song)=>void; shareSong:(song:Song)=>void
 }) {
   const empty=contributions.length===0
   const spotlight=slots.find(item=>item.questionId==='A02')??slots[0]
   const spotlightSong=songById(spotlight.songId)
-  return <main className="screen album-result-screen scrollable">
+  return <main className="screen album-result-screen">
+    <div className="result-scroll scrollable">
     <Brand onHome={home}/>
     <div className="album-header"><span className="eyebrow">ONE RECORD · TWO SIDES</span>
       <h1>{side==='A'?'我的2026 A面':empty?'我的2026 B面':'我的2026 AB面'}</h1>
@@ -140,32 +151,34 @@ function HostResult({ slots, contributions, side, flip, invite, guestView, open,
     </div>
     <div className={'album-stage '+(side==='B'?'show-b':'show-a')+(empty?' is-empty':' has-friends')}>
       <div className="sleeve-paper"><span>2026 / 私人唱片</span><i>✶</i></div>
-      <button className="album-stack" onClick={()=>flip(side==='A'?'B':'A')} aria-label="翻转查看唱片另一面">
+      <div className="album-stack" role="button" tabIndex={0} onClick={()=>flip(side==='A'?'B':'A')} onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();flip(side==='A'?'B':'A')}}} aria-label="翻转查看唱片另一面">
         <span className="album-a-record"><span className="record-ring"></span><span className="album-a-label">A<small>我的2026</small></span>
-          {slots.map((item,index)=>{const song=songById(item.songId),reason=aCoverReason(item,hasHistory);return song?<span className={'record-cover cover-position-'+index} key={item.questionId}><Cover song={song} small/><span className="record-caption" title={reason}><b>#{aById(item.questionId).title}</b><strong>《{song.title}》</strong><small>{reason}</small></span></span>:null})}
+          {slots.map((item,index)=>{const song=songById(item.songId),reason=aCoverReason(item,hasHistory);return song?<span className={'record-cover cover-position-'+index} key={item.questionId}><Cover song={song} small/><PlayButton song={song} playing={playingSongId===song.id} toggle={togglePlay} compact/><span className="record-caption" title={reason}><b>#{aById(item.questionId).title}</b><strong>《{song.title}》</strong><small>{reason}</small></span></span>:null})}
           {spotlightSong&&<span className="album-a-songline">{spotlight.questionId==='A02'?'我的年度最爱':'我的年度主打'}《{spotlightSong.title}》</span>}
         </span>
         <span className="album-b-record"><span className="record-ring"></span><span className="album-b-label">{empty?'?':'B'}<small>{empty?'等待朋友写下':'好友眼中的我'}</small></span>{empty&&<span className="b-visible-question" aria-hidden="true"><b>?</b><small>B面待补全</small></span>}</span>
-      </button>
+      </div>
       {side==='B'&&!empty&&<div className={'b-face-contributions count-'+Math.min(contributions.length,6)} aria-label="好友写在B面上的歌曲">
-        {contributions.map(item=>{const song=songById(item.songId),question=bById(item.questionId),reason=bCoverReason(item);return song?<button key={item.id} className="b-face-entry" onClick={()=>open(item)} aria-label={'查看'+item.friendName+'为'+question.title+'选择的'+song.title+'，'+reason} title={reason}>
-          <span className="b-face-mini-disc"><Cover song={song} small/></span><b>《{song.title}》</b><span className="b-face-note">{reason}</span><small className="b-face-owner">{item.friendName}</small>
-        </button>:null})}
+        {contributions.map(item=>{const song=songById(item.songId),question=bById(item.questionId),reason=bCoverReason(item);return song?<div key={item.id} className="b-face-entry" role="button" tabIndex={0} onClick={()=>open(item)} onKeyDown={event=>{if(event.key==='Enter'){open(item)}}} aria-label={'查看'+item.friendName+'为'+question.title+'选择的'+song.title+'，'+reason} title={reason}>
+          <span className="b-face-mini-disc"><Cover song={song} small/><PlayButton song={song} playing={playingSongId===song.id} toggle={togglePlay} compact/></span><b>《{song.title}》</b><span className="b-face-note">{reason}</span><small className="b-face-owner">{item.friendName}</small>
+        </div>:null})}
       </div>}
       <span className="stage-hint">{side==='B'&&!empty?'轻触好友歌曲，打开详情 ↗':'轻触唱片，也能翻面 ↗'}</span>
     </div>
     <div className="album-tabs"><button className={side==='A'?'active':''} onClick={()=>flip('A')}>A SIDE <small>我亲自录制</small></button><button className={side==='B'?'active':''} onClick={()=>flip('B')}>B SIDE <small>朋友来写</small></button></div>
-    {side==='A'?<><div className="album-cta"><Button onClick={()=>flip('B')}>翻转查看B面</Button></div><section className="album-tracklist"><div className="section-title"><span>THE FOUR TRACKS</span><b>我的四首年度注脚</b></div>
-      {slots.map((item,index)=>{const song=songById(item.songId);return <div className="track-row" key={item.questionId}><span>{String(index+1).padStart(2,'0')}</span>{song&&<Cover song={song} small/>}<div><small>{aById(item.questionId).title}</small><b>{song?.title??'待选歌曲'}</b><em>{song?.artist??''}</em></div></div>})}
-      <p>4首歌曲，组成我的年度主打。</p></section></>:
-      <>{empty?<section className="unknown-note"><span>THE UNWRITTEN SIDE</span><h2>朋友眼中的你，<br/>还藏着哪些歌？</h2><p>挑一道题，交给朋友写下第一首隐藏曲目。</p></section>:
+    <BQuestionPicker slots={slots} selected={selectedB} choose={chooseB} expanded={expanded} toggle={toggleExpanded}/>
+    <button className="guest-preview-link" onClick={guestView}>体验好友视角 ↗</button>
+    <section className="album-tracklist"><div className="section-title"><span>THE FOUR TRACKS</span><b>我的四首年度注脚</b></div>
+      {slots.map((item,index)=>{const song=songById(item.songId),reason=aCoverReason(item,hasHistory);return <div className="track-row" key={item.questionId}><span>{String(index+1).padStart(2,'0')}</span>{song&&<span className="track-cover"><Cover song={song} small/><PlayButton song={song} playing={playingSongId===song.id} toggle={togglePlay} compact/></span>}<div className="track-copy"><small>{aById(item.questionId).title}</small><b>{song?.title??'待选歌曲'}</b><em>{song?.artist??''}</em><small className="track-reason">{reason}</small></div>{song&&<div className="track-actions"><button className={likedSongs.has(song.id)?'liked':''} onClick={()=>toggleLike(song.id)} aria-label={(likedSongs.has(song.id)?'取消红心：':'添加红心：')+song.title} aria-pressed={likedSongs.has(song.id)}>{likedSongs.has(song.id)?'♥':'♡'}</button><button onClick={()=>commentSong(song)} aria-label={'查看Demo评论：'+song.title}>▱</button><button onClick={()=>shareSong(song)} aria-label={'分享歌曲：'+song.title}>↗</button></div>}</div>})}
+      <p>4首歌曲，组成我的年度主打。红心与试听均为当前页面Demo状态。</p></section>
+    {side==='B'&&<>{empty?<section className="unknown-note"><span>THE UNWRITTEN SIDE</span><h2>朋友眼中的你，<br/>还藏着哪些歌？</h2><p>挑一道题，交给朋友写下第一首隐藏曲目。</p></section>:
         <section className="b-side-summary"><span>FRIENDS ON THE B SIDE</span><h2>{contributions.length} 位好友，写下了你的另一面</h2><p>每首歌都已收进B面唱片，轻触唱片上的小圆盘即可查看。</p></section>}
-        <BQuestionPicker slots={slots} selected={selectedB} choose={chooseB} expanded={expanded} toggle={toggleExpanded}/>
-        <div className="album-cta sticky-share"><Button onClick={invite}>{empty?'分享这道题给好友':'继续邀请好友，发现更多B面'}</Button><button className="text-link" onClick={guestView}>体验好友视角 ↗</button></div>
       </>}
     <div className="result-demo-switch"><span>评审演示模式 · 仅模拟好友数量</span><div>{[0,1,3,6].map(count=><button key={count} className={reviewCount===count?'active':''} onClick={()=>{setDemoCount(count);flip(count===0?'A':'B')}}>{count===6?'多位':count+'位'}</button>)}{actualCount>0&&<button className={reviewCount===null?'active':''} onClick={()=>{setDemoCount(null);flip('B')}}>本次贡献</button>}</div></div>
-    <button className="artist-egg" onClick={artist}><span>AL</span><b>艺人隐藏B面 · 可选模拟彩蛋</b><em>↗</em></button>
+    {FEATURES.artist&&<button className="artist-egg" onClick={artist}><span>AL</span><b>艺人隐藏B面 · 可选模拟彩蛋</b><em>↗</em></button>}
     {contributions.some(item=>item.demo)&&<p className="demo-note">评审演示样例，非真实线上好友数据。</p>}
+    </div>
+    <div className="result-fixed-invite"><Button onClick={invite}>继续邀请好友，发现更多B面</Button></div>
   </main>
 }
 function GuestSong({ questionId, slots, ownerName, batch, selected, select, switchBatch, search, back, confirm, home, hasHistory, friendName, setFriendName }: {
@@ -237,10 +250,10 @@ export default function App() {
   useEffect(()=>{
     if(query.get('capture')!=='1'||initialScreen!=='host-result')return
     const focus=query.get('focus')
-    if(focus!=='picker'&&focus!=='wall')return
+    if(focus!=='picker'&&focus!=='tracks'&&focus!=='wall')return
     window.requestAnimationFrame(()=>{
-      const main=document.querySelector('.album-result-screen')
-      const target=document.querySelector(focus==='picker'?'.b-question-picker':'.b-collection')
+      const main=document.querySelector('.result-scroll')
+      const target=document.querySelector(focus==='picker'?'.b-question-picker':focus==='tracks'?'.album-tracklist':'.b-collection')
       if(main&&target)main.scrollTo({top:(target as HTMLElement).offsetTop-26})
     })
   },[])
@@ -269,9 +282,29 @@ export default function App() {
   const [searchText,setSearchText]=useState('')
   const [shareOpen,setShareOpen]=useState(false)
   const [toast,setToast]=useState('')
+  const [playingSongId,setPlayingSongId]=useState<string|undefined>()
+  const [likedSongs,setLikedSongs]=useState<Set<string>>(()=>new Set())
   const [artistSelected,setArtistSelected]=useState<string|undefined>()
   const [artistReturn,setArtistReturn]=useState<'home'|'result'>('home')
   const notify=(message:string)=>{setToast(message);window.setTimeout(()=>setToast(''),2400)}
+  const togglePlay=(songId:string)=>{
+    const song=songById(songId)
+    if(playingSongId===songId){setPlayingSongId(undefined);notify('Demo 试听已暂停')}
+    else{setPlayingSongId(songId);notify(`Demo 试听中：${song?.title??'这首歌'} · 正式版待接入授权音源`)}
+  }
+  const toggleLike=(songId:string)=>setLikedSongs(previous=>{const next=new Set(previous);if(next.has(songId))next.delete(songId);else next.add(songId);return next})
+  const commentSong=(song:Song)=>notify(`Demo 评论预览：${song.title} · 正式版可接入歌曲评论区`)
+  const shareSong=async(song:Song)=>{
+    const url=new URL(window.location.origin+window.location.pathname)
+    url.searchParams.set('song',song.id)
+    const text=`分享歌曲《${song.title}》— ${song.artist}`
+    if(navigator.share){
+      try{await navigator.share({title:`${song.title} - ${song.artist}`,text,url:url.toString()});return}
+      catch(error){if(error instanceof DOMException&&error.name==='AbortError')return}
+    }
+    try{await navigator.clipboard.writeText(`${text} ${url}`);notify('单曲分享内容已复制')}
+    catch{notify(`Demo 单曲分享：${song.title}`)}
+  }
   const completeA=sideA.every(item=>Boolean(item.songId))&&new Set(sideA.map(item=>item.questionId)).size===4
   const shareUrl=useMemo(()=>{
     const url=new URL(window.location.origin+window.location.pathname)
@@ -285,12 +318,12 @@ export default function App() {
   const demoItems=demoContributions.map(item=>item.questionId==='B06'&&!sideA.some(slot=>slot.questionId==='A01')?{...item,questionId:'B02' as BId}:item)
   const contributions=reviewCount===null?realContributions:demoItems.slice(0,reviewCount)
   const setDemoCount=(count:number|null)=>setReviewCount(count)
-  const flipResult=(side:'A'|'B')=>{setResultSide(side);document.querySelector('.album-result-screen')?.scrollTo({top:0,behavior:'smooth'})}
+  const flipResult=(side:'A'|'B')=>{setResultSide(side);document.querySelector('.result-scroll')?.scrollTo({top:0,behavior:'smooth'})}
   const home=()=>{setScreen('home');setDetail(undefined);setShareOpen(false)}
   const startOwn=()=>{
     setSideA(defaultAIds.map(questionId=>({questionId})));setOwnerName('我');setStep(0);setDraft(undefined);setBatch(0)
     setRealContributions([]);setReviewCount(null);setLastContribution(undefined);setSelectedB('B03');setExpandedB(false)
-    setResultSide('A');setScreen('host-edit');setShareOpen(false)
+    setResultSide('A');setScreen('host-edit');setShareOpen(false);setPlayingSongId(undefined);setLikedSongs(new Set())
   }
   const goStep=(index:number)=>{setStep(index);setDraft(sideA[index].songId);setBatch(0);setScreen('host-edit')}
   const switchQuestion=()=>{
@@ -315,7 +348,7 @@ export default function App() {
   }
   const openSearch=(context:SearchContext)=>{setSearchText('');setSearchContext(context)}
   const pickSearch=(id:string)=>{if(searchContext==='host')setDraft(id);else setGuestSong(id);setSearchContext(undefined)}
-  const openArtist=(from:'home'|'result')=>{setArtistReturn(from);setArtistSelected(undefined);setScreen('artist-quiz')}
+  const openArtist=(from:'home'|'result')=>{if(!FEATURES.artist)return;setArtistReturn(from);setArtistSelected(undefined);setScreen('artist-quiz')}
   const leaveArtist=()=>{if(artistReturn==='home')startOwn();else setScreen('host-result')}
   const copyShare=async()=>{
     try{await navigator.clipboard.writeText(shareUrl);notify('邀请链接已复制，可以发给好友')}
@@ -336,7 +369,7 @@ export default function App() {
     setReviewCount(count)
     setResultSide(count>0?'B':'A');setLastContribution(demoContributions[0])
     setSelectedB('B03');setGuestSong(undefined);setExpandedB(false);setScreen(target)
-    window.requestAnimationFrame(()=>document.querySelector('.album-result-screen')?.scrollTo({top:0}))
+    window.requestAnimationFrame(()=>document.querySelector('.result-scroll')?.scrollTo({top:0}))
   }
   const menu=[
     {label:'01 活动首页',action:()=>demo('home')},
@@ -354,12 +387,12 @@ export default function App() {
   ]
   const page=screen==='home'?<Home start={startOwn} artist={()=>openArtist('home')} onHome={home}/>:
     screen==='host-edit'?<HostEditor step={step} slot={sideA[step]} slots={sideA} draft={draft} batch={batch} select={setDraft} switchQuestion={switchQuestion} switchBatch={()=>setBatch(value=>value+1)} search={()=>openSearch('host')} back={()=>step===0?home():goStep(step-1)} confirm={confirmHost} home={home} hasHistory={hasHistory}/>:
-    screen==='host-result'?<HostResult slots={sideA} contributions={contributions} side={resultSide} flip={flipResult} invite={()=>setShareOpen(true)} guestView={()=>{setGuestSong(undefined);setScreen('guest-song')}} open={setDetail} artist={()=>openArtist('result')} home={home} setDemoCount={setDemoCount} reviewCount={reviewCount} actualCount={realContributions.length} selectedB={selectedB} chooseB={setSelectedB} expanded={expandedB} toggleExpanded={()=>setExpandedB(value=>!value)} hasHistory={hasHistory}/>:
+    screen==='host-result'?<HostResult slots={sideA} contributions={contributions} side={resultSide} flip={flipResult} invite={shareOrCopy} guestView={()=>{setGuestSong(undefined);setScreen('guest-song')}} open={setDetail} artist={()=>openArtist('result')} home={home} setDemoCount={setDemoCount} reviewCount={reviewCount} actualCount={realContributions.length} selectedB={selectedB} chooseB={setSelectedB} expanded={expandedB} toggleExpanded={()=>setExpandedB(value=>!value)} hasHistory={hasHistory} playingSongId={playingSongId} togglePlay={togglePlay} likedSongs={likedSongs} toggleLike={toggleLike} commentSong={commentSong} shareSong={shareSong}/>:
     screen==='guest-song'?<GuestSong questionId={selectedB} slots={sideA} ownerName={guestOwnerName} batch={guestBatch} selected={guestSong} select={setGuestSong} switchBatch={()=>setGuestBatch(value=>value+1)} search={()=>openSearch('guest')} back={home} confirm={submitGuest} home={home} hasHistory={false} friendName={friendName} setFriendName={setFriendName}/>:
     screen==='guest-result'&&lastContribution?<GuestResult contribution={lastContribution} ownerName={guestOwnerName} slots={sideA} startOwn={startOwn} viewOwner={()=>{setResultSide('B');setScreen('host-result')}} invite={()=>setShareOpen(true)} detail={()=>setDetail(lastContribution)} home={home}/>:
     screen==='artist-quiz'||screen==='artist-reveal'?<ArtistFlow reveal={screen==='artist-reveal'} selected={artistSelected} setSelected={setArtistSelected} next={()=>setScreen('artist-reveal')} back={leaveArtist} home={home}/>:
     <Home start={startOwn} artist={()=>openArtist('home')} onHome={home}/>
-  return <div className="app-shell"><aside className="demo-nav"><div className="demo-title"><span>♫</span><div><b>AB面 · V3.0</b><small>MENTOR REVIEW CONSOLE</small></div></div><div className="demo-status">● 可交互评审演示</div><nav>{menu.map(item=><button key={item.label} onClick={item.action}>{item.label}<em>›</em></button>)}<h3>其他状态</h3><button onClick={()=>{setHasHistory(false);demo('host-edit')}}>无听歌数据示例 <em>›</em></button><h3>可选艺人模块</h3><button onClick={()=>openArtist('home')}>艺人初始入口 <em>›</em></button><button onClick={()=>{setSideA(demoA);openArtist('result')}}>艺人结果彩蛋 <em>›</em></button></nav><p className="demo-tips">评审演示：0、1、3、6位好友可切换；贡献均为Mock样例。</p><button className="reset-demo" onClick={startOwn}>↻ 从头制作A面</button></aside>
+  return <div className="app-shell"><aside className="demo-nav"><div className="demo-title"><span>♫</span><div><b>AB面 · V3.0</b><small>MENTOR REVIEW CONSOLE</small></div></div><div className="demo-status">● 可交互评审演示</div><nav>{menu.map(item=><button key={item.label} onClick={item.action}>{item.label}<em>›</em></button>)}<h3>其他状态</h3><button onClick={()=>{setHasHistory(false);demo('host-edit')}}>无听歌数据示例 <em>›</em></button>{FEATURES.artist&&<><h3>可选艺人模块</h3><button onClick={()=>openArtist('home')}>艺人初始入口 <em>›</em></button><button onClick={()=>{setSideA(demoA);openArtist('result')}}>艺人结果彩蛋 <em>›</em></button></>}</nav><p className="demo-tips">评审演示：0、1、3、6位好友可切换；贡献均为Mock样例。</p><button className="reset-demo" onClick={startOwn}>↻ 从头制作A面</button></aside>
     <div className="phone-stage"><div className="phone-frame" key={screen}>{page}{searchContext&&<SearchSheet context={searchContext} search={searchText} setSearch={setSearchText} pick={pickSearch} close={()=>setSearchContext(undefined)}/>}
       {detail&&<DetailSheet item={detail} close={()=>setDetail(undefined)}/>}
       {shareOpen&&completeA&&<ShareSheet url={shareUrl} questionId={selectedB} share={shareOrCopy} copy={copyShare} guest={()=>{setShareOpen(false);setGuestSong(undefined);setScreen('guest-song')}} close={()=>setShareOpen(false)}/>}
