@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   aQuestions, availableB, defaultAIds, defaultBFor, demoA, demoContributions,
   recommendations, songById, songs, aById, bById,
@@ -109,20 +109,49 @@ function BQuestionPicker({ slots, selected, choose, expanded, toggle }: {
   const all=defaultBFor(slots)
   const firstFour=all.slice(0,4)
   const selectedQuestion=all.find(question=>question.id===selected)
-  const shown=expanded?all:(selectedQuestion&&!firstFour.some(question=>question.id===selected)?[selectedQuestion,...firstFour.slice(0,3)]:firstFour)
-  const icons:Record<BId,string>={B01:'✦',B02:'✉',B03:'◕',B04:'▣',B05:'♫',B06:'◀',B07:'◉'}
+  const deck=selectedQuestion&&!firstFour.some(question=>question.id===selected)?[selectedQuestion,...firstFour.slice(0,3)]:firstFour
+  const selectedIndex=Math.max(0,deck.findIndex(question=>question.id===selected))
+  const ordered=[...deck.slice(selectedIndex),...deck.slice(0,selectedIndex)]
   const a01=songById(slots.find(item=>item.questionId==='A01')?.songId)
+  const startX=useRef<number|null>(null)
+  const timer=useRef<number|undefined>(undefined)
+  const [dragX,setDragX]=useState(0)
+  const [leaving,setLeaving]=useState<'left'|'right'|null>(null)
+  useEffect(()=>()=>window.clearTimeout(timer.current),[])
+  const switchTo=(id:BId,direction:1|-1)=>{
+    if(id===selected||leaving)return
+    setLeaving(direction===1?'left':'right')
+    timer.current=window.setTimeout(()=>{choose(id);setLeaving(null);setDragX(0)},180)
+  }
+  const cycle=(direction:1|-1)=>{
+    const target=deck[(selectedIndex+direction+deck.length)%deck.length]
+    if(target)switchTo(target.id,direction)
+  }
+  const pointerDown=(event:React.PointerEvent<HTMLButtonElement>)=>{
+    startX.current=event.clientX
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+  const pointerMove=(event:React.PointerEvent<HTMLButtonElement>)=>{
+    if(startX.current===null||leaving)return
+    setDragX(Math.max(-75,Math.min(75,event.clientX-startX.current)))
+  }
+  const pointerEnd=(event:React.PointerEvent<HTMLButtonElement>)=>{
+    if(startX.current===null)return
+    const distance=event.clientX-startX.current
+    startX.current=null
+    if(Math.abs(distance)>38)cycle(distance<0?1:-1)
+    else setDragX(0)
+  }
   return <section className="b-question-picker">
-    <div className="picker-heading"><span>CHOOSE A QUESTION</span><h2>选一道题，让好友补全你的B面</h2><p>已经帮你选好一道题，也可以换一道。</p></div>
-    <div className="b-question-list">{shown.map((question,index)=>
-      <button key={question.id} className={'b-question-card '+(selected===question.id?'chosen':'')} onClick={()=>choose(question.id)} aria-pressed={selected===question.id}>
-        <span className="question-card-number">{String(index+1).padStart(2,'0')} / {question.id}</span>
-        <span className="question-card-check">{selected===question.id?'✓':'+'}</span>
-        <span className="topic-stamp" aria-hidden="true">{icons[question.id]}</span>
-        <strong>{question.title}</strong><small>{question.prompt}</small>
-        {question.id==='B06' && a01 && <em>TA的片头曲：《{a01.title}》</em>}
-      </button>)}</div>
-    <button className="more-questions" onClick={toggle}>{expanded?'收起题目 ↑':'查看更多题目 ↗'}</button>
+    <div className="picker-heading fan-picker-heading"><span>CHOOSE A QUESTION</span><h2>抽一张题卡，让好友补全B面</h2></div>
+    <div className="fanned-card-deck" aria-label="左右滑动或点击卡片边缘切换题目">
+      {ordered.map((question,index)=>
+        <button key={question.id} className={'fan-index-card fan-depth-'+index+(index===0?' is-front':'')+(index===0&&leaving?' is-leaving-'+leaving:'')} style={index===0?{'--drag-x':dragX+'px','--drag-rotate':dragX*.025+'deg'} as React.CSSProperties:undefined} onClick={()=>{if(index>0)switchTo(question.id,1)}} onPointerDown={index===0?pointerDown:undefined} onPointerMove={index===0?pointerMove:undefined} onPointerUp={index===0?pointerEnd:undefined} onPointerCancel={index===0?()=>{startX.current=null;setDragX(0)}:undefined} aria-pressed={index===0} aria-label={index===0?`当前分享题目：${question.title}`:`切换为${question.title}`}>
+          {index===0&&<span className="fan-card-inner"><span className="fan-card-count">{String(selectedIndex+1).padStart(2,'0')}/04 · {question.id}</span><span className="fan-card-check">✓ 已选</span><strong>{question.title}</strong><small>{question.prompt}</small>{question.id==='B06'&&a01&&<em>TA的片头曲：《{a01.title}》</em>}<i>左右滑动翻阅</i></span>}
+        </button>)}
+    </div>
+    <div className="fan-card-controls"><button onClick={()=>cycle(1)}>↻ 换一张</button><button onClick={toggle}>{expanded?'收起题目 ↑':'查看更多题目 ↗'}</button></div>
+    {expanded&&<div className="fan-more-list">{all.map(question=><button key={question.id} className={selected===question.id?'chosen':''} onClick={()=>switchTo(question.id,1)} aria-pressed={selected===question.id}><span>{question.id}</span>{question.title}</button>)}</div>}
   </section>
 }
 function aCoverReason(item:ASelection, hasHistory:boolean) {
