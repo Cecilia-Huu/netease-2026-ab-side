@@ -59,3 +59,8 @@
 .b-face-contributions.count-2,.b-face-contributions.count-3{grid-auto-rows:96px}
 @media(max-width:375px){.record-caption b,.record-caption strong{font-size:7px}.record-caption small{font-size:6px;line-height:7px}.b-face-entry b{font-size:7px}.b-face-entry .b-face-note,.b-face-entry .b-face-owner{font-size:6px;line-height:7px}.b-face-contributions.count-2,.b-face-contributions.count-3{grid-auto-rows:78px}}
 .question-screen:not(.guest-song-screen) .song-meta em{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+/* B-side song artwork uses the same square sleeve language as the A-side. */
+.b-face-mini-disc{border-radius:2px;border:3px solid #fff8ee;background:#fff8ee;box-shadow:2px 3px 5px #4e314a8c;overflow:hidden;transform:rotate(-4deg)}
+.b-face-entry:nth-child(even) .b-face-mini-disc{transform:rotate(4deg)}
+.b-face-mini-disc:before{display:none}
+.b-face-mini-disc .cover{width:100%;height:100%;border:0;border-radius:0;box-shadow:none}
