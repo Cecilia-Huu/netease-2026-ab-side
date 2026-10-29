@@ -104,3 +104,14 @@
 .question-screen .song-option .song-radio{position:absolute;right:9px;top:9px;width:24px;height:24px;background:#fffdf7}
 .question-screen .song-option.selected .song-radio{background:#ee80b2}
 @media(max-width:375px){.question-screen .song-list{gap:8px}.question-screen .song-option{min-height:160px;padding:8px}.question-screen .song-option .cover{width:68px;height:68px}.question-screen .song-option .song-meta strong{font-size:14px}.question-screen .song-option .song-radio{right:7px;top:7px}}
+
+/* NetEase-style horizontal actions beneath each annual track. */
+.album-tracklist .track-row{display:grid;grid-template-columns:22px 44px minmax(0,1fr);grid-template-rows:auto auto;column-gap:8px;row-gap:3px;align-items:center}
+.album-tracklist .track-row>span:first-child{grid-column:1;grid-row:1/3}
+.album-tracklist .track-row>.track-cover{grid-column:2;grid-row:1/3}
+.album-tracklist .track-row>.track-copy{grid-column:3;grid-row:1}
+.album-tracklist .track-row>.track-actions{grid-column:3;grid-row:2;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px}
+.album-tracklist .track-actions button{width:24px;height:24px;display:grid;place-items:center;color:#777}
+.album-tracklist .track-actions svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.album-tracklist .track-actions button.liked{color:#e94167}
+@media(max-width:375px){.album-tracklist .track-row{column-gap:6px}.album-tracklist .track-row>.track-actions{gap:11px!important}}

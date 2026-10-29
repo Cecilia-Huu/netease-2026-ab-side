@@ -47,6 +47,11 @@ function PlayButton({ song, playing, toggle, compact = false }: { song:Song; pla
     <span aria-hidden="true">{playing?'Ⅱ':'▶'}</span>
   </button>
 }
+function TrackActionIcon({ type, filled = false }: { type:'heart'|'comment'|'share'; filled?:boolean }) {
+  if(type==='heart')return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5S4 16 2.7 10.9C1.7 7 4.2 4 7.4 4c2 0 3.7 1.1 4.6 2.6C12.9 5.1 14.6 4 16.6 4c3.2 0 5.7 3 4.7 6.9C20 16 12 20.5 12 20.5Z" fill={filled?'currentColor':'none'}/></svg>
+  if(type==='comment')return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 17.3 3.8 21l3.7-1.8A9.2 9.2 0 1 0 4.5 17.3Z"/><path d="M8 10h8M8 13.5h5"/></svg>
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 6.2 19.3 12l-5.8 5.8M19 12H9.8c-3.2 0-5.5 1.8-6.8 5.2.3-6.2 3.4-9.2 9.4-9.2"/></svg>
+}
 function Vinyl({ palette = 'rainbow', side = 'A', small = false, onClick }: { palette?: string; side?: 'A' | 'B'; small?: boolean; onClick?: () => void }) {
   const contents = <><i className="vinyl-groove groove-a"></i><i className="vinyl-groove groove-b"></i><span className="vinyl-center"><b>{side}</b><em>2026</em></span></>
   return onClick ? <button className={'vinyl vinyl-' + palette + (small ? ' vinyl-small' : '')} onClick={onClick} aria-label="翻转唱片">{contents}</button> :
@@ -169,11 +174,9 @@ function HostResult({ slots, contributions, side, flip, invite, guestView, open,
     <BQuestionPicker slots={slots} selected={selectedB} choose={chooseB} expanded={expanded} toggle={toggleExpanded}/>
     <button className="guest-preview-link" onClick={guestView}>体验好友视角 ↗</button>
     <section className="album-tracklist"><div className="section-title"><span>THE FOUR TRACKS</span><b>我的四首年度注脚</b></div>
-      {slots.map((item,index)=>{const song=songById(item.songId),reason=aCoverReason(item,hasHistory);return <div className="track-row" key={item.questionId}><span>{String(index+1).padStart(2,'0')}</span>{song&&<span className="track-cover"><Cover song={song} small/><PlayButton song={song} playing={playingSongId===song.id} toggle={togglePlay} compact/></span>}<div className="track-copy"><small>{aById(item.questionId).title}</small><b>{song?.title??'待选歌曲'}</b><em>{song?.artist??''}</em><small className="track-reason">{reason}</small></div>{song&&<div className="track-actions"><button className={likedSongs.has(song.id)?'liked':''} onClick={()=>toggleLike(song.id)} aria-label={(likedSongs.has(song.id)?'取消红心：':'添加红心：')+song.title} aria-pressed={likedSongs.has(song.id)}>{likedSongs.has(song.id)?'♥':'♡'}</button><button onClick={()=>commentSong(song)} aria-label={'查看Demo评论：'+song.title}>▱</button><button onClick={()=>shareSong(song)} aria-label={'分享歌曲：'+song.title}>↗</button></div>}</div>})}
+      {slots.map((item,index)=>{const song=songById(item.songId),reason=aCoverReason(item,hasHistory);return <div className="track-row" key={item.questionId}><span>{String(index+1).padStart(2,'0')}</span>{song&&<span className="track-cover"><Cover song={song} small/><PlayButton song={song} playing={playingSongId===song.id} toggle={togglePlay} compact/></span>}<div className="track-copy"><small>{aById(item.questionId).title}</small><b>{song?.title??'待选歌曲'}</b><em>{song?.artist??''}</em><small className="track-reason">{reason}</small></div>{song&&<div className="track-actions"><button className={likedSongs.has(song.id)?'liked':''} onClick={()=>toggleLike(song.id)} aria-label={(likedSongs.has(song.id)?'取消红心：':'添加红心：')+song.title} aria-pressed={likedSongs.has(song.id)}><TrackActionIcon type="heart" filled={likedSongs.has(song.id)}/></button><button onClick={()=>commentSong(song)} aria-label={'查看Demo评论：'+song.title}><TrackActionIcon type="comment"/></button><button onClick={()=>shareSong(song)} aria-label={'分享歌曲：'+song.title}><TrackActionIcon type="share"/></button></div>}</div>})}
       <p>4首歌曲，组成我的年度主打。红心与试听均为当前页面Demo状态。</p></section>
-    {side==='B'&&<>{empty?<section className="unknown-note"><span>THE UNWRITTEN SIDE</span><h2>朋友眼中的你，<br/>还藏着哪些歌？</h2><p>挑一道题，交给朋友写下第一首隐藏曲目。</p></section>:
-        <section className="b-side-summary"><span>FRIENDS ON THE B SIDE</span><h2>{contributions.length} 位好友，写下了你的另一面</h2><p>每首歌都已收进B面唱片，轻触唱片上的小圆盘即可查看。</p></section>}
-      </>}
+    {side==='B'&&!empty&&<section className="b-side-summary"><span>FRIENDS ON THE B SIDE</span><h2>{contributions.length} 位好友，写下了你的另一面</h2><p>每首歌都已收进B面唱片，轻触唱片上的小圆盘即可查看。</p></section>}
     <div className="result-demo-switch"><span>评审演示模式 · 仅模拟好友数量</span><div>{[0,1,3,6].map(count=><button key={count} className={reviewCount===count?'active':''} onClick={()=>{setDemoCount(count);flip(count===0?'A':'B')}}>{count===6?'多位':count+'位'}</button>)}{actualCount>0&&<button className={reviewCount===null?'active':''} onClick={()=>{setDemoCount(null);flip('B')}}>本次贡献</button>}</div></div>
     {FEATURES.artist&&<button className="artist-egg" onClick={artist}><span>AL</span><b>艺人隐藏B面 · 可选模拟彩蛋</b><em>↗</em></button>}
     {contributions.some(item=>item.demo)&&<p className="demo-note">评审演示样例，非真实线上好友数据。</p>}
